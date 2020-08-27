@@ -37,7 +37,7 @@ class converter(QWidget):
         self.setWindowTitle("Fichier KMZ")
 
     def initGui(self):
-      icon = os.path.join(os.path.join(cmd_folder, 'logo.jpg')) # add the logo to the plugin
+      icon = os.path.join(os.path.join(cmd_folder, 'logo.png')) # add the logo to the plugin
       self.action = QAction(QIcon(icon), 'Converter kmz shp', self.iface.mainWindow())
       self.action.triggered.connect(self.run)
       self.iface.addPluginToMenu('&Converter kmz shp', self.action)
@@ -85,6 +85,8 @@ def main():
                     copying(layer_to_copy.name())
                 else :
                     print ("selected layer to paste")
+        
+        delete_duplicate('L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC.shp', "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC_CLEAN.shp")
  
  
     #####
@@ -170,3 +172,17 @@ def copying (layer_to_copy):
     data_provider.addFeatures(features)
         
     QgsProject.instance().removeMapLayer(layer)
+    
+    
+def delete_duplicate(layer_to_clean, output):
+    print("deleting duplicates")
+    
+    processing.run("qgis:deleteduplicategeometries", {'INPUT':layer_to_clean,'OUTPUT':output})
+    path = "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC_CLEAN.shp"
+    
+    vlayer = QgsVectorLayer(path, "SODIAC_CLEAN", "ogr")
+        
+    if not vlayer.isValid():
+        print("Layer failed to load!")
+    else:
+        QgsProject.instance().addMapLayer(vlayer)
