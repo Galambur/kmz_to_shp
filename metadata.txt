@@ -1,0 +1,20 @@
+[general]
+name=Convertisseur kmz vers shp
+description=Impératif : Avoir un dossier "SHP" dans le dossier du fichier .kmz.
+
+about=Avant tout, il faut que le fichier à convertir soit le seul dans la
+	légende. Ensuite, le script : 
+   <ul><li> demande le nom du groupe cherché</li>
+   <li>convertit chaque couche du groupe en fichier shp et les sort du 
+   groupe</li>
+   <li>demande d'ouvrir un fichier dans lequel copier les valeurs</li>
+   <li>copie toutes les valeurs des couches dans le fichier puis ferme les 
+   couches</li>
+   <li>demande un nom pour un fichier sans doublons, puis nettoie le 
+   fichier de ses doublons</li>
+   </ul>
+
+version=2.0
+qgisMinimumVersion=3.0
+author=Gaëlle Derambure
+email=gaelle.derambure@cdc-habitat.fr
