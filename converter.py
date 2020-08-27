@@ -55,30 +55,36 @@ class converter(QWidget):
 
 
 button = converter()
-button.show()
 
 
 ########## MAIN FUNCTION ########## 
     
 def main():
     iface.messageBar().pushMessage('La trame commence')
-    test = get_names_group("SODIAC_PATRIMOINE")
+    group_name = getTextInput("Nom groupe", "Entrez le nom du groupe cherché")
+    test = get_names_group(group_name)
     
     if test == False : ## on n'a pas trouvé de groupe avec le nom cherché : on ne continue pas le programme
         print("stop car pas de groupe trouvé")
     else : ## il y a bien un groupe avec le nom cherché
-        opening("L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC.shp", "SODIAC")
+        file_out = QFileDialog.getOpenFileName(caption='Ouvrir un fichier shp dans lequel coller les valeurs', filter=("SHP files(*.shp);;All files(*.*)")) ## chemin du fichier dans lequel on colle
+        file_out = file_out[0]
+        layer_name_out = (file_out.rsplit('/', 1)[1]).rsplit('.',1)[0] ## nom de la couche dans laquelle on colle
+        opening(file_out, layer_name_out) ## on ouvre ce fichier
 
-        layer_to_paste = QgsProject.instance().mapLayersByName('SODIAC')[0]
+        layer_to_paste = QgsProject.instance().mapLayersByName(layer_name_out)[0]
         
         with edit(layer_to_paste):
             for layer_to_copy in QgsProject.instance().mapLayers().values():
-                if layer_to_copy.name() != "SODIAC" : # on évite de copier puis enlever la couche dans laquelle on colle
-                    copying(layer_to_copy.name())
+                if layer_to_copy.name() != layer_name_out : # on évite de copier puis enlever la couche dans laquelle on colle
+                    copying(layer_to_copy.name(), layer_name_out)
                 else :
                     print ("selected layer to paste")
         
-        delete_duplicate('L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC.shp', "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC_CLEAN.shp")
+        layer_name_clean = getTextInput("Fichier sans doublons", "Entrez le nom du fichier sans doublons")
+        path_clean = file_out.rsplit('/', 1)[0]
+        layer_name_clean =  path_clean + '/' + layer_name_clean + '.shp'
+        delete_duplicate(file_out, layer_name_clean)
  
  
     #####
@@ -91,7 +97,7 @@ def get_names_group(group_name):
             layer = QgsProject.instance().mapLayersByName(child.name())
 
             if layer[0].geometryType() == QgsWkbTypes.PointGeometry : ## on ne veut récupérer que les couches points
-                func_convert(child.name(), child)
+                func_convert(child.name(), child, group_name)
             else : 
                 print(layer[0], " not a point geom")
         root.removeChildNode(the_group)
@@ -101,7 +107,7 @@ def get_names_group(group_name):
 
 
     ##### CONVERT KMZ TO SHP #####
-def func_convert(layer_name, child):
+def func_convert(layer_name, child, group_name):
     
     layer = QgsProject.instance().mapLayersByName(layer_name)[0] # on réfcupère la couche avec le nom qu'on a recu
     iface.setActiveLayer(layer)
@@ -124,7 +130,7 @@ def func_convert(layer_name, child):
         # déplacer la couche en dehors du groupe
         root = QgsProject.instance().layerTreeRoot()
         
-        mygroup = root.findGroup("SODIAC_PATRIMOINE")
+        mygroup = root.findGroup(group_name)
         
         ## on ouvre le fichier converti et on le déplace en dehors du groupe
         parentGroup = mygroup.parent()
@@ -141,7 +147,7 @@ def func_convert(layer_name, child):
     ## fonction pour ouvrir une couche à partir d'un chemin
 def opening(path, name):
     ## ouvrir la couche
-    vlayer = QgsVectorLayer(path_sodiac, name, "ogr")
+    vlayer = QgsVectorLayer(path, name, "ogr")
         
     if not vlayer.isValid():
         print("Layer failed to load!")
@@ -151,14 +157,14 @@ def opening(path, name):
   
   
     ## fonction copier toutes les valeurs d'une couches dans une autre
-def copying (layer_to_copy):
+def copying (layer_to_copy, layer_to_paste_name):
 
     ## sélection de la couche qui porte le nom qu'on reçoit
     layer = QgsProject.instance().mapLayersByName(layer_to_copy)[0]
     iface.setActiveLayer(layer)
     
     ## copie des valeurs de la couche ci dessus dans l'autre couche
-    layer_to_paste = QgsProject.instance().mapLayersByName('SODIAC')[0]
+    layer_to_paste = QgsProject.instance().mapLayersByName(layer_to_paste_name)[0]
     features = []
     for feature in layer.getFeatures(): ## récupère toutes les features de la couche à copier
         features.append(feature)
@@ -174,10 +180,14 @@ def delete_duplicate(layer_to_clean, output):
     processing.run("qgis:deleteduplicategeometries", {'INPUT':layer_to_clean,'OUTPUT':output}) #utilise les paths des couche
     
     ## ouverture de la couche nettoyée
-    path = "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC_CLEAN.shp"
-    opening(path, "SODIAC_CLEAN")
-#    vlayer = QgsVectorLayer(path, "SODIAC_CLEAN", "ogr")
-#    if not vlayer.isValid():
-#        print("Layer failed to load!")
-#    else:
-#        QgsProject.instance().addMapLayer(vlayer)
+    output_name = output.rsplit('/', 1)[1]
+    opening(output, output_name)
+    
+    
+           ######### TEXT INPUT ##########
+def getTextInput(title, message):
+    answer = QInputDialog.getText(None, title, message)
+    if answer[1]:
+        return answer[0]
+    else:
+        return None
