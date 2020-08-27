@@ -19,12 +19,18 @@ class converter(QWidget):
 
         # Add the radio buttons
         self.point = QPushButton("Les points")
+        self.polygon = QPushButton("Les polygones")
+        self.lign = QPushButton("Les lignes")
 
         # Connect radio buttons to our functions
         self.point.clicked.connect(self.main_func)
+        self.polygon.clicked.connect(self.main_func)
+        self.lign.clicked.connect(self.main_func)
 
         #Add the widgets to the layout:
         self.layout.addWidget(self.point)
+        self.layout.addWidget(self.polygon)
+        self.layout.addWidget(self.lign)
 
         #Set the layout:
         self.setLayout(self.layout)  
@@ -63,25 +69,22 @@ button.show()
     
 def main():
     iface.messageBar().pushMessage('La trame commence')
-    get_names_group()
+    test = get_names_group()
     
-    path_sodiac = "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC.shp"
-    vlayer = QgsVectorLayer(path_sodiac, "SODIAC", "ogr")
-    
-    if not vlayer.isValid():
-        print("Layer failed to load!")
-    else:
-        QgsProject.instance().addMapLayer(vlayer)
+    if test == False :
+        print("stop car pas de groupe trouvé")
+    else :     
+        opening()
 
-    layer_to_paste = QgsProject.instance().mapLayersByName('SODIAC')[0]
-    
-    with edit(layer_to_paste):
-        for layer_to_copy in QgsProject.instance().mapLayers().values():
-            if layer_to_copy.name() != "SODIAC" :
-                print("would copy", layer_to_copy.name())
-                copying(layer_to_copy.name())
-            else :
-                print ("selected layer ensemble")
+        layer_to_paste = QgsProject.instance().mapLayersByName('SODIAC')[0]
+        
+        with edit(layer_to_paste):
+            for layer_to_copy in QgsProject.instance().mapLayers().values():
+                if layer_to_copy.name() != "SODIAC" :
+                    print("copying ", layer_to_copy.name())
+                    copying(layer_to_copy.name())
+                else :
+                    print ("selected layer to paste")
  
  
     #####
@@ -98,9 +101,9 @@ def get_names_group():
             else : 
                 print(layer[0], " not a point geom")
         root.removeChildNode(the_group)
+        return True
     else :  # if the_group is not None 
-        print("Le groupe n'a pas été trouvé")
-                
+        return False
 
 
     ##### CONVERT KMZ TO SHP #####
@@ -138,6 +141,19 @@ def func_convert(layer_name, child):
         QgsProject.instance().addMapLayer(vlayer, False)
         parentGroup.insertChildNode(groupIndex, QgsLayerTreeLayer(vlayer))        
 
+
+
+
+def opening():
+    path_sodiac = "L:/DPG/Stratégie/SIG/Cartes dynamiques/GEO intranet/SIDOM/Données/SODIAC.shp"
+    vlayer = QgsVectorLayer(path_sodiac, "SODIAC", "ogr")
+        
+    if not vlayer.isValid():
+        print("Layer failed to load!")
+    else:
+        QgsProject.instance().addMapLayer(vlayer)
+  
+  
   
     ## fonction copier toutes les valeurs des couches dans ensemble.shp
 def copying (layer_to_copy):
